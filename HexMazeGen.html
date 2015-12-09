@@ -1,0 +1,267 @@
+﻿<script>
+map_width = 30;
+
+map = 0;
+dxx = 0;
+dyy = 0;
+map = new Array(map_width);
+
+function irandom(k) {
+	var k = Math.random() * k >> 0;
+	return k;
+}
+
+function ins(k, left, right) {
+	if (k >= left) {
+		if (k < right) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function maze_Gen() {
+	cells = map_width * map_height;
+	delete map;
+	map = new Array(map_width);
+	for (i = 0; i < map_width; i++) {
+		map[i] = new Array(map_height);
+		for (var j = 0; j < map_width; j++) {
+			map[i][j] = 0;
+		}
+	}
+	delete dxx;
+	delete dyy;
+	dxx = new Array(6);
+	dyy = new Array(6);
+	var temp_angle_Step = Math.PI / 3;
+	var temp_angle = temp_angle_Step / 2;
+	for (var i = 0; i < 6; i++) {
+		dxx[i] = Math.cos(temp_angle) * cell_width;
+		dyy[i] = - Math.sin(temp_angle) * cell_width;
+		temp_angle += temp_angle_Step;
+	}
+	var i, j, queue_size = 0;
+	var queue_x = new Array(cells);
+	var queue_y = new Array(cells);
+	x_start = irandom(map_width);
+	y_start = irandom(map_height);
+	map[x_start][y_start] = 1;
+	xx = x_start;
+	yy = y_start;
+	queue_x[queue_size] = -1;
+	queue_y[queue_size++] = -1;
+	while (queue_size > 0) {
+		var b = 0;
+		for (var i = 0; i < 6; i++) {
+			var ll = xx % 2;
+			var x1 = xx + dx[ll][i];
+			var y1 = yy + dy[ll][i];
+			if (ins(x1, 0, map_width)) if (ins(y1, 0, map_height)) {
+				if (map[x1][y1] == 0) {
+					b++;
+				}
+			}
+		}
+		if (b) {
+			b = irandom(b);
+			for (var i = 0; i < 6; i++) {
+				var ll = xx % 2;
+				var x1 = xx + dx[ll][i];
+				var y1 = yy + dy[ll][i];
+				if (ins(x1, 0, map_width)) if (ins(y1, 0, map_height)) {
+					if (map[x1][y1] == 0) {
+						if (b <= 0) {
+							queue_x[queue_size] = xx;
+							queue_y[queue_size++] = yy;
+							map[xx][yy] *= ds[ll][i];
+							var l1 = x1 % 2;
+							map[x1][y1] = ds[l1][(i + 3) % 6];
+							xx = x1;
+							yy = y1;
+							i = 6;
+						}
+						b--;
+					}
+				}
+			}
+		}
+		else {
+			xx = queue_x[--queue_size];
+			yy = queue_y[queue_size];
+		}
+	}
+/*	var qq = 0;
+	for (var i = 0; i < map_width; i++) {
+		for (var j = 0; j < map_height; j++) {
+			var l = i % 2;
+			map[i][j] = ds[l][qq];
+			qq++;
+			if (qq == 6) {
+				qq = 0;
+			}
+		}
+	}*/
+}
+
+function map_Resize(width, height) {
+	for (var i = 0; i < map_width; i++) {
+		delete map[i];
+	}
+	delete map;
+	map_width = width;
+	map_height = height;
+	map = new Array(width);
+	for (var i = 0; i < width; i++) {
+		map[i] = new Array(height);
+		for (var j = 0; j < height; j++) {
+			map[i][j] = 0;
+		}
+	}
+//	surf.lineWidth = cell_width / 6;
+}
+
+function map_Show() {
+	surf_Clear();
+	for (var i = 0; i < map_width; i++) {
+		for (var j = 0; j < map_height; j++) {
+			cell_Draw(i, j);
+		}
+	}
+}
+
+function surf_Clear() {
+	surf.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function cell_Draw(x, y) {
+	var xc = 0;
+	var yc = 0;
+	if (x % 2 == 0) {
+		surf.beginPath();
+		var yy = y * cell_height;
+		var xx = x * cell_xstep + cell_halfWidth;
+		surf.moveTo(xx, yy);
+		var x1 = xx + cell_width;
+		surf.lineTo(x1, yy);
+		var y1 = yy + cell_halfHeight;
+		surf.lineTo(x1 + cell_halfWidth, y1);
+		var y2 = yy + cell_height;
+		surf.lineTo(x1, y2);
+		surf.lineTo(xx, y2);
+		surf.lineTo(xx - cell_halfWidth, y1);
+		surf.lineTo(xx, yy);
+		surf.stroke();
+		surf.closePath();
+		xc = xx + cell_halfWidth;
+		yc = y1;
+	}
+	else {
+		surf.beginPath();
+		var yy = y * cell_height + cell_halfHeight;
+		var xx = x * cell_xstep + cell_halfWidth;
+		surf.moveTo(xx, yy);
+		var x1 = xx + cell_width;
+		surf.lineTo(x1, yy);
+		var y1 = yy + cell_halfHeight;
+		surf.lineTo(x1 + cell_halfWidth, y1);
+		var y2 = yy + cell_height;
+		surf.lineTo(x1, y2);
+		surf.lineTo(xx, y2);
+		surf.lineTo(xx - cell_halfWidth, y1);
+		surf.lineTo(xx, yy);
+		surf.stroke();
+		surf.closePath();
+		xc = xx + cell_halfWidth;
+		yc = y1;
+	}
+	surf.lineWidth = cell_width / 4;
+	for (var i = 0; i < 6; i++) {
+		var ll = x % 2;
+		if (map[x][y] % ds[ll][i] == 0) {
+			surf.beginPath();
+			surf.moveTo(xc, yc);
+			surf.lineTo(xc + dxx[i], yc + dyy[i]);
+			surf.closePath();
+			surf.stroke();
+		}
+	}
+	surf.lineWidth = 1;
+}
+
+function setDxDyDs() {
+	ds = new Array(2);
+	ds[0] = new Array(6);
+	ds[1] = new Array(6);
+	dx = new Array(2);
+	dx[0] = new Array(6);
+	dx[1] = new Array(6);
+	dy = new Array(2);
+	dy[0] = new Array(6);
+	dy[1] = new Array(6);
+	dx[1][0] = 1;
+	dy[1][0] = 0;
+	ds[1][0] = 2;
+	dx[1][1] = 0;
+	dy[1][1] = -1;
+	ds[1][1] = 3;
+	dx[1][2] = -1;
+	dy[1][2] = 0;
+	ds[1][2] = 5;
+	dx[1][3] = -1;
+	dy[1][3] = 1;
+	ds[1][3] = 7;
+	dx[1][4] = 0;
+	dy[1][4] = 1;
+	ds[1][4] = 11;
+	dx[1][5] = 1;
+	dy[1][5] = 1;
+	ds[1][5] = 13;
+	dx[0][0] = 1;
+	dy[0][0] = -1;
+	ds[0][0] = 2;
+	dx[0][1] = 0;
+	dy[0][1] = -1;
+	ds[0][1] = 3;
+	dx[0][2] = -1;
+	dy[0][2] = -1;
+	ds[0][2] = 5;
+	dx[0][3] = -1;
+	dy[0][3] = 0;
+	ds[0][3] = 7;
+	dx[0][4] = 0;
+	dy[0][4] = 1;
+	ds[0][4] = 11;
+	dx[0][5] = 1;
+	dy[0][5] = 0;
+	ds[0][5] = 13;
+}
+
+</script>
+
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>HexMap by NL</title>
+    </head>
+    <body>
+        <center>
+            <canvas id="draw" width="1024" height="600"></canvas>
+        </center>
+    </body>
+</html>
+
+<script>
+canvas = document.getElementById("draw");
+surf = canvas.getContext("2d");
+cell_width = (2 * canvas.width) / (3 * map_width + 1);
+cell_halfWidth = cell_width / 2;
+cell_halfHeight = cell_width * Math.sqrt(3) / 2;
+cell_height = cell_halfHeight * 2;
+cell_xstep = cell_width + cell_halfWidth;
+map_height = ((canvas.height - cell_halfHeight) / cell_height) >> 0;
+map_Resize(map_width, map_height);
+setDxDyDs();
+maze_Gen();
+map_Show();
+</script>
